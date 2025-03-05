@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual sort</title>
+    <link rel="stylesheet" href="style_table.css">
+</head>
+<body>
+    <h2>Select lines for virtual sort</h2>
+    <div class="table" id="table"></div>
+    <script>
+      // Variables globales pour les colonnes et les lignes
+        let selectedCols = [];
+        let rows = [];
+      // Écouter les messages de la fenêtre parent
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.action === 'updateTable') {
+                // Mettre à jour les valeurs depuis localStorage
+                const updatedCols = JSON.parse(localStorage.getItem('selectedColumns')) || [];
+                const updatedRows = JSON.parse(localStorage.getItem('rows')) || [];
+
+                // Réinitialiser les données globales
+                selectedCols.length = 0;
+                selectedCols.push(...updatedCols);
+                rows.length = 0;
+                rows.push(...updatedRows);
+
+                // Mettre à jour le tableau
+                enter_virtual_chiffre();
+            }
+        });
+
+        // Initier le tableau lors du premier chargement
+        selectedCols = JSON.parse(localStorage.getItem('selectedColumns')) || [];
+        rows = JSON.parse(localStorage.getItem('rows')) || [];
+
+        function enter_virtual_chiffre() {
+            let table = "<table><thead><tr>";
+
+            // Faire des colonnes en tête
+            selectedCols.forEach(colIndex => {
+                table += `<th>${rows[0][colIndex]}</th>`;
+            });
+            table += "</tr></thead><tbody>";
+
+            // Ajouter une ligne avec des champs d'entrée
+            table += "<tr>";
+            selectedCols.forEach(() => {
+                table += `<td><input type="text" placeholder="Enter value"></td>`;
+            });
+            table += "</tr></tbody></table>";
+
+            document.getElementById('table').innerHTML = table;
+        }
+
+        function add_lignes() {
+            // Récupérer le tableau existant
+            const tableBody = document.querySelector('#table table tbody');
+
+            // Vérifier si le tableau body existe
+            if (tableBody) {
+                // Ajouter une nouvelle ligne
+                const newRow = tableBody.insertRow();
+
+                // Ajouter des cellules avec champs d'entrée dans la nouvelle ligne
+                selectedCols.forEach(() => {
+                    const newCell = newRow.insertCell();
+                    newCell.innerHTML = `<input type="text" placeholder="Enter value">`;
+                });
+            }
+        }
+
+
+    function delete_lignes() {
+        // Récupérer le tableau existant
+        const tableBody = document.querySelector('#table table tbody');
+
+        // Vérifier s'il y a des lignes et supprimer la dernière
+        if (tableBody && tableBody.rows.length > 0) {
+            tableBody.deleteRow(tableBody.rows.length - 1);
+        }
+    }
+    function euclideanDistance(vec1, vec2) {
+        let sum = 0;
+        for (let i = 0; i < vec1.length; i++) {
+            sum += Math.pow(vec1[i] - vec2[i], 2);
+        }
+        return Math.sqrt(sum);
+    }
+
+    function trierParDistanceEuclidienne(fullRows, selectedRows, filteredRows) {
+        let ligneChoisis = [];
+        let autres = [];
+
+        // Diviser les lignes choisi avec des autres lignes
+        for (let i = 0; i < filteredRows.length; i++) {
+            if (selectedRows.includes(i + 1)) {
+                ligneChoisis.push({ original: fullRows[i], filtered: filteredRows[i] });
+            } else {
+                autres.push({ original: fullRows[i], filtered: filteredRows[i] });
+            }
+        }
+        console.log(ligneChoisis);
+        console.log(autres);
+        let distanceMin = [];
+        // Calculer par le euclidean algorithme
+        for (let i = 0; i < autres.length; i++) {
+            let distances = [];
+            for (let j = 0; j < ligneChoisis.length; j++) {
+                let dist = euclideanDistance(autres[i].filtered, ligneChoisis[j].filtered);
+                distances.push(dist);
+            }
+            let minDist = Math.min(...distances);
+            distanceMin.push({ row: autres[i].original, distance: minDist });
+        }
+
+        // Sort par le distance
+        distanceMin.sort((a, b) => a.distance - b.distance);
+        console.log(distanceMin);
+        // Return un nouveau table après similarité
+        return [
+            ...ligneChoisis.map(item => item.original),
+            ...distanceMin.map(item => item.row)
+        ];
+    }
+
+
+    function calculer_virtual_sort() {
+
+    // Récupérer toutes les lignes ajoutées dynamiquement par l'utilisateur
+    const tableBody = document.querySelector('#table table tbody');
+    const selectedRows = [];
+
+    if (tableBody) {
+        Array.from(tableBody.rows).forEach(row => {
+            const rowData = Array.from(row.cells).map(cell => {
+                const input = cell.querySelector("input");
+                return input ? parseFloat(input.value) || 0 : 0; // Récupérer la valeur entrée ou 0 par défaut
+            });
+            selectedRows.push(rowData);
+        });
+    }
+    console.log(selectedRows);
+    // Vérifier si des lignes ont été sélectionnées / remplies
+    if (selectedRows.length === 0 || selectedRows.some(row => row.every(value => value === 0))) {
+        alert("Please select at least one valid row!");
+        return;
+    }
+
+
+        // Des valeurs pour les colonnes on a chosi
+        const filteredRows = rows.slice(1).map(row => {
+            return selectedCols.map(colIndex => parseFloat(row[colIndex]) || 0);
+        });
+
+        // Valeur original dans ce fichier
+        const fullRows = rows.slice(1);
+
+        // Données après similarité
+        const orderedData = trierParDistanceEuclidienne(fullRows, selectedRows, filteredRows);
+        console.log(orderedData);
+        // Creer un table pour des nouveau fichier .csv après similarité
+        let table = "<div class=\"table\" id=\"table\"><table><thead><tr>";
+        rows[0].forEach(header => {
+            table += `<th>${header}</th>`;
+        });
+        table += "</tr></thead><tbody>";
+
+        orderedData.forEach(row => {
+            table += "<tr>";
+            row.forEach(cell => {
+                table += `<td>${cell}</td>`;
+            });
+            table += "</tr>";
+        });
+        table += "</tbody></table></div>";
+}
+
+    </script>
+    <br>
+    <button onclick="add_lignes()">Add line</button>
+    <button onclick="delete_lignes()">Delete line</button>
+    <button onclick="calculer_virtual_sort()">Calcul virtual sort</button>
+</body>
+</html>
