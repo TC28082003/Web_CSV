@@ -161,6 +161,7 @@ function retirerLignesVides() {
 // Variables globales pour suivre les fenêtres ouvertes
 let affichageWindow = null;
 let similarityWindow = null;
+let virtualWindow = null;
 
 // Fonction afficherTableau mise à jour
 function connect_to_profil() {
@@ -261,17 +262,17 @@ function Virtual_sort() {
     localStorage.setItem('selectedColumns', JSON.stringify(selectedCols));
     localStorage.setItem('rows', JSON.stringify(rows));
     //Vérification et gestion de la fenêtre `virtual.html`
-    if (similarityWindow && !similarityWindow.closed) {
+    if (virtualWindow && !virtualWindow.closed) {
         // Si la fenêtre existe et est ouverte, envoyer une commande pour mettre à jour
-        similarityWindow.postMessage({ action: 'updateTable' }, '*');
-        similarityWindow.focus(); // Ramener au premier plan
+        virtualWindow.postMessage({ action: 'updateTable' }, '*');
+        virtualWindow.focus(); // Ramener au premier plan
     } else {
         // Sinon, ouvrir une nouvelle fenêtre et conserver la référence
-        similarityWindow = window.open('virtual.html', '_blank');
+        virtualWindow = window.open('virtual.html', '_blank');
 
         // Attendre que la fenêtre soit prête (au cas où le script n'est pas chargé immédiatement)
-        similarityWindow.onload = () => {
-            similarityWindow.postMessage({ action: 'updateTable' }, '*');
+        virtualWindow.onload = () => {
+            virtualWindow.postMessage({ action: 'updateTable' }, '*');
         };
     }
 }

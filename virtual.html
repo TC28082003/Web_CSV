@@ -130,7 +130,7 @@
 
     // Récupérer toutes les lignes ajoutées dynamiquement par l'utilisateur
     const tableBody = document.querySelector('#table table tbody');
-    const selectedRows = [];
+    const virtual_Rows = [];
 
     if (tableBody) {
         Array.from(tableBody.rows).forEach(row => {
@@ -138,13 +138,13 @@
                 const input = cell.querySelector("input");
                 return input ? parseFloat(input.value) || 0 : 0; // Récupérer la valeur entrée ou 0 par défaut
             });
-            selectedRows.push(rowData);
+            virtual_Rows.push(rowData);
         });
     }
-    console.log(selectedRows);
+    console.log(virtual_Rows);
     // Vérifier si des lignes ont été sélectionnées / remplies
-    if (selectedRows.length === 0 || selectedRows.some(row => row.every(value => value === 0))) {
-        alert("Please select at least one valid row!");
+    if (virtual_Rows.length === 0 || virtual_Rows.some(row => row.every(value => value === 0))) {
+        alert("Row not valid!");
         return;
     }
 
