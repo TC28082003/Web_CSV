@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style_table.css">
 </head>
 <body>
-    <h2>Select lines for virtual sort</h2>
+    <h2>Enter data</h2>
     <div class="table" id="table"></div>
     <script>
       // Variables globales pour les colonnes et les lignes
@@ -34,6 +34,8 @@
         // Initier le tableau lors du premier chargement
         selectedCols = JSON.parse(localStorage.getItem('selectedColumns')) || [];
         rows = JSON.parse(localStorage.getItem('rows')) || [];
+        let headers = rows[0];
+        headers.push("Status");
 
         function enter_virtual_chiffre() {
             let table = "<table><thead><tr>";
@@ -113,13 +115,12 @@
         }
 
         // Sort par le distance
-        distanceMin.sort((a, b) => a.distance - b.distance);
+        distanceMin.sort((a, b) => a.distance_min - b.distance_min);
         console.log(distanceMin);
+        let data = []
+        data = distanceMin.map(item => item.row);
         // Return un nouveau table après similarité
-        return [
-            ...lines.map(item => item.original),
-            ...distanceMin.map(item => item.row)
-        ];
+        return data;
     }
 
 
@@ -139,12 +140,12 @@
         });
     }
     console.log(virtual_Rows);
+    console.log(selectedCols);
     // Vérifier si des lignes ont été sélectionnées / remplies
     if (virtual_Rows.length === 0 || virtual_Rows.some(row => row.every(value => value === 0))) {
         alert("Row not valid!");
         return;
     }
-
 
         // Des valeurs pour les colonnes on a chosi
         const filteredRows = rows.slice(1).map(row => {
@@ -155,16 +156,40 @@
         const fullRows = rows.slice(1);
 
         // Données après similarité
+        let fullData = [];
         const orderedData = trierParDistanceEuclidienne(fullRows, virtual_Rows, filteredRows);
         console.log(orderedData);
+
+        const rowLength = orderedData[0].length;
+        // Préparer les virtual_Rows en étendant leurs colonnes
+        let formattedVirtualRows = virtual_Rows.map(row => {
+            let newRow = Array(rowLength).fill(null); // Créer une ligne avec des "vides"
+            selectedCols.forEach((colIdx, i) => {
+                newRow[colIdx] = row[i]; // Ajouter les valeurs sélectionnées aux positions correspondantes
+            });
+            newRow.push("Virtual")
+            return newRow;
+        });
+
+        // Ajouter "Real" à la fin de chaque ligne du orderedData
+        let formattedOrderedData = orderedData.map(row => {
+            let newRow = [...row]; // Faire une copie de la ligne
+            newRow.push("Real"); // Ajouter "Real" comme dernier élément de la ligne
+            return newRow;
+        });
+
+        // Insérer les virtual_Rows au début de orderedData
+        fullData = [...formattedVirtualRows, ...formattedOrderedData];
+        console.log(fullData);
         // Creer un table pour des nouveau fichier .csv après similarité
         let table = "<div class=\"table\" id=\"table\"><table><thead><tr>";
         rows[0].forEach(header => {
             table += `<th>${header}</th>`;
         });
+        table += `<th>Status</th>`
         table += "</tr></thead><tbody>";
 
-        orderedData.forEach(row => {
+        fullData.forEach(row => {
             table += "<tr>";
             row.forEach(cell => {
                 table += `<td>${cell}</td>`;
@@ -172,12 +197,45 @@
             table += "</tr>";
         });
         table += "</tbody></table></div>";
-}
+        document.getElementById('table1').innerHTML = table;
+        return fullData;
+    }
+
+    function export_en_CSV() {
+        // Appeler 'calculer_virtual_sort()' pour obtenir les données
+        const data = calculer_virtual_sort();
+        if (!data || data.length === 0) {
+            console.error("Aucune donnée à exporter");
+            return;
+        }
+        // Convertir les données en CSV
+        let csvContent = headers.map(header => header).join(",") + "\n";
+        csvContent += data.map(row => row.join(",")).join("\n");
+
+        // Créer un fichier et le télécharger
+        const blob = new Blob([csvContent], { type: "text/csv" });
+        const url = window.URL.createObjectURL(blob);
+
+        // Créer un lien pour le téléchargement
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = "virtual_sort.csv";
+        anchor.click();
+
+        // Nettoyer l'URL
+        window.URL.revokeObjectURL(url);
+    }
+
 
     </script>
     <br>
     <button onclick="add_lignes()">Add line</button>
     <button onclick="delete_lignes()">Delete line</button>
     <button onclick="calculer_virtual_sort()">Calcul virtual sort</button>
+    <br><br>
+    <h2>Result after virtual sort</h2>
+    <div class="table1" id="table1"></div>
+    <br><br>
+    <button onclick="export_en_CSV()">Save file</button>
 </body>
 </html>
