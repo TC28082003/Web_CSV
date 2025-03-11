@@ -1,51 +1,75 @@
         // Variables globales pour les colonnes et les lignes
-        let selectedCols = [];
-        let rows = [];
+        let selectedColumns = [];
+        let data_transform = [];
+        let profileName = '';
 
         // Afficher le tableau
         function afficherTableau() {
-            let table = "<table><thead><tr>";
+            console.log("Data: ",data_transform);
+            let table = `<h1><P></P>Profile: ${profileName}</h1><table><thead><tr>`;
             table += "<th>Select lines</th>";
 
-            // Faire des colonnes en tête
-            selectedCols.forEach(colIndex => {
-                table += `<th>${rows[0][colIndex]}</th>`;
+            // Ajouter une ligne de cases à cocher pour les colonnes
+            selectedColumns.forEach((colIndex, colPosition) => {
+                table += `<th><input type='checkbox' class='columnSelect' value='${colIndex}'> ${data_transform[0][colIndex]}</th>`;
             });
+
             table += "</tr></thead><tbody>";
 
+
             // Des valeurs pour chaque colonne
-            for (let i = 1; i < rows.length; i++) {
+            for (let i = 1; i < data_transform.length; i++) {
                 table += "<tr>";
                 table += `<td><input type='checkbox' class='rowSelect' value='${i}'></td>`;
-                selectedCols.forEach(colIndex => {
-                    table += `<td>${rows[i][colIndex]}</td>`;
+                selectedColumns.forEach(colIndex => {
+                    table += `<td>${data_transform[i][colIndex]}</td>`;
                 });
                 table += "</tr>";
             }
             table += "</tbody></table>";
             document.getElementById('table').innerHTML = table;
         }
+        function getTableData() {
+                let tableData = [];
+                // Sélectionner le tableau affiché
+                const table = document.querySelector('#table table'); // Trouver le tableau dans le conteneur "table"
+                const rows = table.querySelectorAll('tr'); // Récupérer toutes les lignes du tableau
+                rows.forEach((row) => {
+                    let rowData = [];
 
+                    // Sélectionner toutes les cellules (th ou td)
+                    const cells = row.querySelectorAll('th, td');
+                    cells.forEach((cell, cellIndex) => {
+                        if (cellIndex > 0) { // Ignorer la première cellule de chaque ligne
+                            rowData.push(cell.innerText || cell.textContent);
+                        }
+                    });
+
+                    tableData.push(rowData); // Ajouter la ligne mise à jour dans le tableau final
+                });
+                return tableData;
+        }
             // Écouter les messages de la fenêtre parent
         window.addEventListener('message', (event) => {
             if (event.data && event.data.action === 'updateTable') {
                 // Mettre à jour les valeurs depuis localStorage
                 const updatedCols = JSON.parse(localStorage.getItem('selectedColumns')) || [];
-                const updatedRows = JSON.parse(localStorage.getItem('rows')) || [];
-
+                const updatedRows = JSON.parse(localStorage.getItem('data_transform')) || [];
+                const updatedprofileName = localStorage.getItem('profileName') || '';
                 // Réinitialiser les données globales
-                selectedCols.length = 0;
-                selectedCols.push(...updatedCols);
-                rows.length = 0;
-                rows.push(...updatedRows);
-
+                selectedColumns.length = 0;
+                selectedColumns.push(...updatedCols);
+                data_transform.length = 0;
+                data_transform.push(...updatedRows);
+                profileName = updatedprofileName;
                 // Mettre à jour le tableau
                 afficherTableau();
             }
         });
         // Initier le tableau lors du premier chargement
-        selectedCols = JSON.parse(localStorage.getItem('selectedColumns')) || [];
-        rows = JSON.parse(localStorage.getItem('rows')) || [];
+        selectedColumns = JSON.parse(localStorage.getItem('selectedColumns')) || [];
+        data_transform = JSON.parse(localStorage.getItem('data_transform')) || [];
+        profileName = localStorage.getItem('profileName') || '';
         afficherTableau();
 
         // Fonction pour calculer la distance Euclidienne entre deux vecteurs
@@ -93,17 +117,24 @@ function trierParDistanceEuclidienne(fullRows, selectedRows, filteredRows) {
     ];
 }
 
+let result_similarWindow = null;
 
 function calculer_similarity() {
     const selectedRows = Array.from(document.querySelectorAll('input.rowSelect:checked')).map(input => parseInt(input.value));
+    const selectedCols = Array.from(document.querySelectorAll('input.columnSelect:checked')).map(input => parseInt(input.value));
+    let rows = getTableData();
+    console.log("Rows: ",rows);
 
     if (selectedRows.length === 0) {
         alert("Please select at least one row!");
         return;
     }
+    if (selectedCols.length === 0) {
+        alert("Please select at least one column!");
+    }
 
     // Des valeurs pour les colonnes on a chosi
-    const filteredRows = rows.slice(1).map(row => {
+    const filteredRows = data_transform.slice(1).map(row => {
         return selectedCols.map(colIndex => parseFloat(row[colIndex]) || 0);
     });
 
@@ -114,7 +145,7 @@ function calculer_similarity() {
     const orderedData = trierParDistanceEuclidienne(fullRows, selectedRows, filteredRows);
     console.log(orderedData);
     // Creer un table pour des nouveau fichier .csv après similarité
-    let table = "<div class=\"table\" id=\"table\"><table><thead><tr>";
+    let table = `<div class=\"table\" id=\"table\"> <h1> Result Similarity for ${profileName} </h1><table><thead><tr>`;
     rows[0].forEach(header => {
         table += `<th>${header}</th>`;
     });
@@ -128,40 +159,14 @@ function calculer_similarity() {
         table += "</tr>";
     });
     table += "</tbody></table></div>";
-    // Ouvrir table résultat dans un nouveau onglet
-    const newWindow = window.open("", "_blank");
-    newWindow.document.write(`
-        <html lang="en">
-            <head>
-                <title>Résultats Similarités</title>
-                <link rel="stylesheet" href="style_table.css">
-            </head>
-            <body>
-                <h2>Résultats des Similarités</h2>
-                ${table}
-                <br>
-                <button onclick="export_en_CSV()">Sauvegarder CSV</button>
-                <script>
-                    function export_en_CSV() {
-                        let csvContent = "";
-                        let table = document.querySelector("table");
-                        let rows = table.querySelectorAll("tr");
-            
-                        rows.forEach((row, index) => {
-                            let rowData = [];
-                            row.querySelectorAll("th, td").forEach(cell => rowData.push(cell.innerText));
-                            csvContent += rowData.join(",") + (index < rows.length - 1 ? "\\n" : ""); // Ajoute une nouvelle ligne sauf pour la dernière ligne
-                        });
-            
-                        let blob = new Blob([csvContent], { type: "text/csv" });
-                        let link = document.createElement("a");
-                        link.href = URL.createObjectURL(blob);
-                        link.download = "Result_similarity.csv";
-                        link.click();
-                }
-                </script>
-            </body>
-        </html>
-    `);
-    newWindow.document.close();
+    localStorage.setItem('profileName', JSON.stringify(profileName));
+    localStorage.setItem('table', JSON.stringify(table)); // Avec un 'I' majuscule    // Vérifier si la fenêtre `display.html` est déjà ouverte
+    if (result_similarWindow && !result_similarWindow.closed) {
+        // Si déjà ouverte, envoyer une commande à la fenêtre pour qu'elle mette à jour son contenu
+        result_similarWindow.postMessage({ action: 'updateTable' }, '*');
+        result_similarWindow.focus(); // Ramener au premier plan
+    } else {
+        // Sinon, ouvrir une nouvelle fenêtre et conserver la référence
+        result_similarWindow = window.open('result_similar.html', '_blank');
+    }
 }

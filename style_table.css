@@ -34,8 +34,8 @@ button {
     border: 1px dashed #999;
 }
 .table {
-    max-height: 70vh;
+    max-height: 80vh;
     overflow-y: auto;
     border-radius: 60px;
-    border: 1px dashed #999;
+    border: 5px dashed #999;
 }
