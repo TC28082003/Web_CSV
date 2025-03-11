@@ -4,7 +4,7 @@ const file = document.getElementById('csvfile');
 // Attacher un événement de changement
 file.addEventListener("change", prend_fichier);
 let rows = [];
-let savedProfiles = {}; // Object to store saved profiles
+let savedProfiles = JSON.parse(localStorage.getItem('savedProfiles')) || {}; // Object to store saved profiles
 
 // Fonction pour lire le fichier CSV
 function prend_fichier(event) {
