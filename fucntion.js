@@ -5,6 +5,8 @@ const file = document.getElementById('csvfile');
 file.addEventListener("change", prend_fichier);
 let rows = [];
 let savedProfiles = JSON.parse(localStorage.getItem('savedProfiles')) || {}; // Object to store saved profiles
+let lastVisitedProfile = ""; //
+let savedprofilesparent = JSON.parse(localStorage.getItem('savedprofilesparent')) || {};
 
 // Fonction pour lire le fichier CSV
 function prend_fichier(event) {
@@ -113,15 +115,22 @@ function display_list_profiles(contenu, fichier) {
 
     // Ajout d'un bouton pour le nom du fichier
     htmlContent += `
-        <fieldset><legend>List profiles</legend>
-            <div id ="profileListContainer" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px;">
+        <fieldset><legend>List files</legend>
+            <div id ="fileListContainer" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
             </div>
         </fieldset>
     `;
 
+    htmlContent += `
+        <fieldset><legend>List profiles</legend>
+            <div id ="profileListContainer" style=" display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
+            </div>
+        </fieldset>
+    `;
+    
     // Zone pour afficher les colonnes (sera remplie via la fonction `display_colonnes`)
     htmlContent += `
-        <fieldset><legend>List colonnes</legend>
+        <fieldset><legend>Display columns</legend>
             <div id="columnDisplay" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
                 Please select a profile to display its columns.
             </div>
@@ -138,7 +147,7 @@ function display_list_profiles(contenu, fichier) {
                 Display profile
             </button>
             <button onclick="delete_profil()">
-                Delete profile
+                Delete file or profile
             </button>
             <button onclick="save_profile_data()">
                 Save profile
@@ -154,7 +163,7 @@ function display_list_profiles(contenu, fichier) {
 
     // Afficher le contenu HTML généré dans l'élément table
     document.getElementById("table").innerHTML = htmlContent;
-    updateProfileList();
+    updateFileList();
 }
 
 // Fonction pour mettre à jour dynamiquement l'affichage du "Nom du profil"
@@ -162,8 +171,10 @@ function updateProfileDisplay(input) {
     const displayProfileName = document.getElementById("displayProfileName");
     displayProfileName.textContent = input.value.trim() || "(Aucun)";
 }
+
 // Fonction pour sauvegarder un profil
 function Save_profile() {
+    let profileNameparent = lastVisitedProfile || localStorage.getItem("lastVisitedProfile");
     const profileName = document.getElementById("profileName").value.trim();
     const profileNameData = lastVisitedProfile || localStorage.getItem("lastVisitedProfile");
     console.log("profile name: ",profileName);
@@ -191,10 +202,6 @@ function Save_profile() {
     const profileData = savedProfiles[profileNameData];
     let rows = [];
 
-    if (!profileData) {
-        alert(`Profile "${profileName}" does not exist!`);
-        return;
-    }
     console.log(profileData);
     // Ajouter les noms des colonnes comme première ligne
     const columnNames = Object.keys(profileData); // Obtenir les clés des colonnes
@@ -221,11 +228,25 @@ function Save_profile() {
             }
         }
     });
-
     savedProfiles[profileName] = selectedData;
+
+    let profile_parent = profileName + "_parent";
+    let profile_parent_parent = profileNameparent + "_parent";
+    console.log("profilename parent parent: ",profile_parent_parent);
+    while(savedprofilesparent[profile_parent_parent]) {
+        profileNameparent = savedprofilesparent[profile_parent_parent];
+        console.log("profilenameparent: ",profileNameparent);
+        profile_parent_parent = profileNameparent + "_parent";
+    }
+    savedprofilesparent[profile_parent] = profileNameparent;
+
+    localStorage.setItem('savedprofilesparent', JSON.stringify(savedprofilesparent));
+
     localStorage.setItem('savedProfiles', JSON.stringify(savedProfiles));
+    console.log(savedprofilesparent);
     console.log(savedProfiles);
-    updateProfileList();
+    updateFileList();
+    display_profile(profileName)
 
     document.getElementById("profileName").value = "";
     Array.from(document.querySelectorAll('input[name="columns"]')).forEach((checkbox) => (checkbox.checked = false));
@@ -233,126 +254,140 @@ function Save_profile() {
     alert(`Profile "${profileName}" has been saved successfully!`);
 }
 
-function updateProfileList() {
-    const profileListContainer = document.getElementById("profileListContainer");
-
-    if (!profileListContainer) {
-        console.error("Container for profile list ('profileListContainer') not found!");
+function updateFileList() {
+    const fileListContainer = document.getElementById("fileListContainer");
+    if (!fileListContainer) {
+        console.error("Container for profile list ('fileListContainer') not found!");
         return;
     }
 
     // Nettoyer le conteneur pour éviter les doublons
-    profileListContainer.innerHTML = "";
+    fileListContainer.innerHTML = "";
 
     // Ajouter un bouton pour chaque profil dans `savedProfiles`
     Object.keys(savedProfiles).forEach((profileName) => {
-        const profileButton = document.createElement("button");
-        profileButton.textContent = profileName;
-        profileButton.style.cssText = `
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            color: white;
-            background-color: #007bff;
-            border: none;
-            border-radius: 30px;
-            font-size: 16px;
-            cursor: pointer;
-        `;
+        let profile_parent = profileName + "_parent";
+        if(!savedprofilesparent[profile_parent]) {
+            const profileButton = document.createElement("button");
+            profileButton.textContent = profileName;
+            profileButton.style.cssText = `
+                width: 100%;
+                padding: 10px;
+                margin: 5px 0;
+                color: white;
+                background-color: #007bff;
+                border: none;
+                border-radius: 30px;
+                font-size: 16px;
+                cursor: pointer;
+            `;
 
-        // Ajouter un événement 'click'
-    profileButton.onclick = () => {
-        // Réinitialiser la couleur de tous les boutons
-        Array.from(profileListContainer.children).forEach((btn) => {
-            btn.style.backgroundColor = "#007bff"; // Couleur par défaut
-        });
+            // Ajouter un événement 'click'
+        profileButton.onclick = () => {
+            // Réinitialiser la couleur de tous les boutons
+            Array.from(fileListContainer.children).forEach((btn) => {
+                btn.style.backgroundColor = "#007bff"; // Couleur par défaut
+            });
 
-        // Changer la couleur du bouton cliqué
-        profileButton.style.backgroundColor = "#28a745"; // Couleur par exemple 'vert'
-        display_profile(profileName);
+            // Changer la couleur du bouton cliqué
+            profileButton.style.backgroundColor = "#28a745"; // Couleur par exemple 'vert'
+            display_profile(profileName);
     };
 
         // Ajouter le bouton au conteneur
-        profileListContainer.appendChild(profileButton);
+        fileListContainer.appendChild(profileButton);
+        }
     });
 
 
 }
 
-let lastVisitedProfile = ""; //
+function display_profile(profileName) {
+    const profileListContainer = document.getElementById("profileListContainer");
+    if (!profileName || profileName === "(Aucun)") {
+        alert("No profile selected. Please select a profile from the list!");
+        return;
+    }
+
+    if (!profileListContainer) {
+        console.error("Container for profile list ('fileListContainer') not found!");
+        return;
+    }
+
+    const visitedProfiles = new Set();
+    // Nettoyer le conteneur pour éviter les doublons
+    profileListContainer.innerHTML = "";
+
+    // Ajouter un bouton pour chaque profil dans `savedProfiles`
+    Object.keys(savedProfiles).forEach((childProfile) => {
+        if (visitedProfiles.has(childProfile)) return;
+        let profile_parent = childProfile + "_parent";
+        if (savedprofilesparent[profile_parent] === profileName) {
+            const profileButton = document.createElement("button");
+            profileButton.textContent = childProfile;
+            profileButton.style.cssText = `
+                width: 100%;
+                padding: 10px;
+                margin: 5px 0;
+                color: white;
+                background-color: #007bff;
+                border: none;
+                border-radius: 30px;
+                font-size: 16px;
+                cursor: pointer;
+            `;
+
+            // Ajouter un événement 'click'
+        profileButton.onclick = () => {
+            // Réinitialiser la couleur de tous les boutons
+            Array.from(profileListContainer.children).forEach((btn) => {
+                btn.style.backgroundColor = "#007bff"; // Couleur par défaut
+            });
+
+            // Changer la couleur du bouton cliqué
+            profileButton.style.backgroundColor = "#28a745"; // Couleur par exemple 'vert'
+            display_profile_colums(childProfile);
+        };
+
+            // Ajouter le bouton au conteneur
+            profileListContainer.appendChild(profileButton);
+        }
+    });
+        display_profile_colums(profileName);
+}
 
 // Fonction pour afficher toutes les colonnes du profil `name_profile`
-function display_profile(profileName) {
+function display_profile_colums(profileName) {
     const profileData = savedProfiles[profileName];
+    if (!profileData) {
+        return;
+    }
+
     const columnHeaders = Object.keys(profileData); // Les colonnes (les clés)
 
     // Obtenir l'en-tête de colonnes (première ligne du fichier)
-    let htmlColonnes = "<div style='display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 2px; column-gap: 2px'>";
+    let htmlColonnes = "<div style='display: grid; grid-template-columns: repeat(8, 1fr); row-gap: 0; column-gap: 0'>";
 
     for (let j = 0; j < columnHeaders.length; j++) {
         // Générer chaque colonne
         htmlColonnes += `
-        <div>
+        <div style="width: 80%;">
             <input type="checkbox" class="colSelect" id="${j}" value="${j}">
             <label for="${j}">${columnHeaders[j]}</label>
         </div>`;
     }
     htmlColonnes += "</div>";
-
     // Afficher les colonnes dans le conteneur de colonnes
     document.getElementById("columnDisplay").innerHTML = htmlColonnes;
     // Mettre à jour le nom du profil activement sélectionné
     document.getElementById("displayProfileName").textContent = profileName;
         // Mémoriser le dernier profil visité dans une variable globale
     lastVisitedProfile = profileName;
-
     // Optionnel : stocker dans le localStorage si vous voulez le rendre persistant
     localStorage.setItem("lastVisitedProfile", profileName);
 
 }
 
-let displayWindow = null;
-function display() {
-    const selectedColumns = Array.from(document.querySelectorAll('input.colSelect:checked')).map((input) =>
-        parseInt(input.value)
-    );
-
-    if (selectedColumns.length === 0) {
-        alert("Please select at least one column to display!");
-        return;
-    }
-
-    const profileName = lastVisitedProfile || localStorage.getItem("lastVisitedProfile");
-    if (!profileName || profileName === "(Aucun)") {
-        alert("No profile selected. Please select a profile from the list!");
-        return;
-    }
-    console.log(profileName);
-    // Récupérer les données du profil
-    const profileData = savedProfiles[profileName];
-    if (!profileData) {
-        alert(`Profile "${profileName}" does not exist!`);
-        return;
-    }
-    const selectedColNames = Object.keys(profileData).filter((_, index) => selectedColumns.includes(index));
-    const selectedColData = selectedColNames.map((column) => profileData[column]);
-    console.log(selectedColData);
-    console.log(selectedColNames);
-    localStorage.setItem('selectedColNames', JSON.stringify(selectedColNames));
-    localStorage.setItem('selectedColData', JSON.stringify(selectedColData));
-    localStorage.setItem('profileName', JSON.stringify(profileName));
-
-        // Vérifier si la fenêtre `display.html` est déjà ouverte
-    if (displayWindow && !displayWindow.closed) {
-        // Si déjà ouverte, envoyer une commande à la fenêtre pour qu'elle mette à jour son contenu
-        displayWindow.postMessage({ action: 'updateTable' }, '*');
-        displayWindow.focus(); // Ramener au premier plan
-    } else {
-        // Sinon, ouvrir une nouvelle fenêtre et conserver la référence
-        displayWindow = window.open('display.html', '_blank');
-    }
-
-}
 
 function delete_profil() {
     const profileName = lastVisitedProfile || localStorage.getItem("lastVisitedProfile");
@@ -365,13 +400,26 @@ function delete_profil() {
     if (!confirm(`Do you really want to delete the profile? "${profileName}" ?`)) {
         return;
     }
+    Object.keys(savedProfiles).forEach((childProfile) => {
+        let profile_parent = childProfile + "_parent";
+        if (savedprofilesparent[profile_parent] === profileName) {
+            delete savedProfiles[childProfile];
+            delete savedprofilesparent[childProfile + "_parent"];
+
+        }
+    });
 
     // Supprimer le profil de la variable profiles
     delete savedProfiles[profileName];
+    delete savedprofilesparent[profileName + "_parent"];
 
     // Mettre à jour dans le stockage local
-    localStorage.setItem('profiles', JSON.stringify(savedProfiles));
-    updateProfileList();
+    localStorage.setItem('savedProfiles', JSON.stringify(savedProfiles));
+    localStorage.setItem('savedprofilesparent', JSON.stringify(savedprofilesparent));
+    console.log(savedprofilesparent);
+    console.log(savedProfiles);
+    updateFileList();
+    display_profile(profileName)
     alert(`Profile "${profileName}" has been deleted successfully!`);
 }
 
@@ -419,9 +467,53 @@ function save_profile_data() {
             }
 
 }
+
+
 let similarityWindow = null;
 let virtualWindow = null;
+let displayWindow = null;
 
+function display() {
+    const selectedColumns = Array.from(document.querySelectorAll('input.colSelect:checked')).map((input) =>
+        parseInt(input.value)
+    );
+
+    if (selectedColumns.length === 0) {
+        alert("Please select at least one column to display!");
+        return;
+    }
+
+    const profileName = lastVisitedProfile || localStorage.getItem("lastVisitedProfile");
+    if (!profileName || profileName === "(Aucun)") {
+        alert("No profile selected. Please select a profile from the list!");
+        return;
+    }
+    console.log(profileName);
+    // Récupérer les données du profil
+    const profileData = savedProfiles[profileName];
+    if (!profileData) {
+        alert(`Profile "${profileName}" does not exist!`);
+        return;
+    }
+    const selectedColNames = Object.keys(profileData).filter((_, index) => selectedColumns.includes(index));
+    const selectedColData = selectedColNames.map((column) => profileData[column]);
+    console.log(selectedColData);
+    console.log(selectedColNames);
+    localStorage.setItem('selectedColNames', JSON.stringify(selectedColNames));
+    localStorage.setItem('selectedColData', JSON.stringify(selectedColData));
+    localStorage.setItem('profileName', JSON.stringify(profileName));
+
+        // Vérifier si la fenêtre `display.html` est déjà ouverte
+    if (displayWindow && !displayWindow.closed) {
+        // Si déjà ouverte, envoyer une commande à la fenêtre pour qu'elle mette à jour son contenu
+        displayWindow.postMessage({ action: 'updateTable' }, '*');
+        displayWindow.focus(); // Ramener au premier plan
+    } else {
+        // Sinon, ouvrir une nouvelle fenêtre et conserver la référence
+        displayWindow = window.open('display.html', '_blank');
+    }
+
+}
 function simlilar_profile() {
 
     const selectedColumns = Array.from(document.querySelectorAll('input.colSelect:checked')).map((input) =>
