@@ -8,6 +8,19 @@ h1 {
     font-family: 'Poppins', sans-serif;
     font-size: 24px;
     border-radius: 10px;
+    top: 20px;
+    right: 20px;
+    width: auto;
+    height: 20px;
+}
+
+.logo {
+    position: absolute; /* Positionnement par rapport à l'écran */
+    top: 20px; /* Place le logo à 20px du haut de l'écran */
+    right: 20px; /* Positionne le logo à 20px du côté droit de l'écran */
+    height: 60px; /* Grande visibilité pour le logo */
+    width: auto; /* Maintient des proportions correctes */
+    object-fit: contain; /* Bonne gestion des proportions */
 }
 
 /* Sous-titres */

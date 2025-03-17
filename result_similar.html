@@ -2,13 +2,68 @@
     <head>
         <title>Result Similarity</title>
         <link rel="stylesheet" href="style_table.css">
+        <style>
+        /* Style pour le bouton */
+        button {
+            position: relative;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        /* Style pour l'info-bulle */
+        .tooltip {
+            visibility: hidden;
+            width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 5px;
+            padding: 5px;
+            position: absolute;
+            bottom: 120%; /* Position sous l'élément */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* Petite flèche sous l'info-bulle */
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+
+        /* Afficher l'info-bulle au survol */
+        button:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
     </head>
     <body>
         <!-- Ce conteneur accueillera la table chargée depuis localStorage -->
         <div id="table-container">
         </div>
         <br>
-        <button onclick="export_en_CSV()">Sauvegarder CSV</button>
+        <button onclick="export_en_CSV()">Download result
+        <div class="tooltip">Click here to download result.</div>
+        </button>
+
+        <button onclick="return_display()">Back to display patients
+        <div class="tooltip">Click here to return to display patients.</div>
+        </button>
 
         <script>
             let table =[];
@@ -54,6 +109,33 @@
                 link.download = `Result_similarity_${profileName}.csv`;
                 link.click();
             }
+            let similarityWindow = null;
+            function return_display() {
+                const similarityName = localStorage.getItem("similarityTabName") || "similaritytab";
+                //Vérification et gestion de la fenêtre `similarity.html`
+                if (similarityWindow && !similarityWindow.closed) {
+                    // Si la fenêtre existe et est ouverte, envoyer une commande pour mettre à jour
+                    similarityWindow.focus(); // Ramener au premier plan
+                } else {
+                    // Sinon, ouvrir une nouvelle fenêtre et conserver la référence
+                    similarityWindow = window.open("similarity.html", similarityName);
+                    // Attendre que la fenêtre soit prête (au cas où le script n'est pas chargé immédiatement)
+                    similarityWindow.onload = () => {
+                        similarityWindow.postMessage({ action: 'updateTable' }, '*');
+                    };
+                }
+            }
+            document.addEventListener("DOMContentLoaded", () => {
+                const result_similarName = "result_similartab";
+                // Store the tab name for Page2
+                localStorage.setItem("result_similarTabName", result_similarName);
+                window.name = result_similarName; // Assign a unique name to this tab
+            });
+
+            // When this tab is closed or refreshed, clear the reference in localStorage
+            window.addEventListener("beforeunload", () => {
+                localStorage.removeItem("result_similarTabName");
+            });
         </script>
     </body>
 </html>

@@ -107,22 +107,19 @@ function display_list_profiles(contenu, fichier) {
             <h2 id="profileTitle" style="font-size: 22px; font-weight: bold; color: #007bff; margin-bottom: 10px;">
                 Profile Name : <span id="displayProfileName" style="color: #FF4500;"></span>
             </h2>
-            <input type="text" id="profileName" placeholder="Enter a profile name"
-                style="padding: 10px; font-size: 16px; border: 1px solid #007bff; border-radius: 10px; width: 50%;"
-                oninput="updateProfileDisplay(this)">
         </div>
     `;
 
     // Ajout d'un bouton pour le nom du fichier
     htmlContent += `
-        <fieldset><legend>List files</legend>
+        <fieldset><legend>Files list</legend>
             <div id ="fileListContainer" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
             </div>
         </fieldset>
     `;
 
     htmlContent += `
-        <fieldset><legend>List profiles</legend>
+        <fieldset><legend>Previous selections</legend>
             <div id ="profileListContainer" style=" display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
             </div>
         </fieldset>
@@ -141,22 +138,13 @@ function display_list_profiles(contenu, fichier) {
     htmlContent += `
         <div style="margin-top: 20px; text-align: center;">
             <button onclick="Save_profile()">
-                Add profile
-            </button>
-            <button onclick="display()">
-                Display profile
+                Save selection
             </button>
             <button onclick="delete_profil()">
-                Delete file or profile
-            </button>
-            <button onclick="save_profile_data()">
-                Save profile
+                Delete data
             </button>
             <button onclick="simlilar_profile()">
-                Similar
-            </button>
-            <button onclick="virtual_profile()">
-                Virtual sort
+                Display patients
             </button>
         </div>
     `;
@@ -166,23 +154,18 @@ function display_list_profiles(contenu, fichier) {
     updateFileList();
 }
 
-// Fonction pour mettre à jour dynamiquement l'affichage du "Nom du profil"
-function updateProfileDisplay(input) {
-    const displayProfileName = document.getElementById("displayProfileName");
-    displayProfileName.textContent = input.value.trim() || "(Aucun)";
-}
-
 // Fonction pour sauvegarder un profil
 function Save_profile() {
     let profileNameparent = lastVisitedProfile || localStorage.getItem("lastVisitedProfile");
-    const profileName = document.getElementById("profileName").value.trim();
+    const profileName = prompt("Please enter a profile name :");
     const profileNameData = lastVisitedProfile || localStorage.getItem("lastVisitedProfile");
-    console.log("profile name: ",profileName);
     let selectedCols = Array.from(document.querySelectorAll('input.colSelect:checked')).map(input => parseInt(input.value));
-    if (!profileName) {
-        alert("Please enter a valid profile name.");
+    // Vérifier si un nom a été saisi
+    if (!profileName || profileName.trim() === "") {
+        alert("Name of the profile cannot be empty !");
         return;
     }
+
     if (selectedCols.length === 0) {
         alert("Please select at least one column for the profile.");
         return;
@@ -246,7 +229,7 @@ function Save_profile() {
     console.log(savedprofilesparent);
     console.log(savedProfiles);
     updateFileList();
-    display_profile(profileName)
+    display_profile(profileName);
 
     document.getElementById("profileName").value = "";
     Array.from(document.querySelectorAll('input[name="columns"]')).forEach((checkbox) => (checkbox.checked = false));
@@ -397,7 +380,7 @@ function delete_profil() {
     }
 
     // Confirmation avant suppression
-    if (!confirm(`Do you really want to delete the profile? "${profileName}" ?`)) {
+    if (!confirm(`Do you really want to delete the profile: "${profileName}" ?`)) {
         return;
     }
     Object.keys(savedProfiles).forEach((childProfile) => {
@@ -419,101 +402,12 @@ function delete_profil() {
     console.log(savedprofilesparent);
     console.log(savedProfiles);
     updateFileList();
-    display_profile(profileName)
+    display_profile(profileName);
     alert(`Profile "${profileName}" has been deleted successfully!`);
 }
 
-function save_profile_data() {
-            const profileName = lastVisitedProfile || localStorage.getItem("lastVisitedProfile");
-            if (!profileName || profileName === "(Aucun)") {
-                alert("No profile selected. Please select a profile from the list!");
-                return;
-            }
-
-            // Récupérer les données du profil
-            const profileData = savedProfiles[profileName];
-            const columnHeaders = Object.keys(profileData); // Les colonnes (les clés)
-            const numRows = profileData[columnHeaders[0]].length; // Nombre de lignes basé sur le premier tableau
-
-            if (!profileData || numRows === 0) {
-                alert("Données indisponibles pour ce profil !");
-                return;
-            }
-
-            // Construire le contenu CSV
-            let csvContent = "";
-            // Ajouter les en-têtes
-            csvContent += columnHeaders.map(header => header).join(",") + "\n";
-            // Ajouter les données
-            for (let i = 0; i < numRows; i++) {
-                csvContent += columnHeaders.map(header => profileData[header][i]).join(",") + "\n";
-            }
-
-            // Créer un fichier Blob pour le téléchargement
-            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-            const filename = `${profileName}.csv`; // Utilise le nom du profil
-
-            // Créer un lien pour télécharger le fichier
-            const link = document.createElement("a");
-            if (link.download !== undefined) { // Vérification de téléchargement pris en charge
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", filename);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            } else {
-                alert("Your browser does not support CSV export.");
-            }
-
-}
-
-
 let similarityWindow = null;
-let virtualWindow = null;
-let displayWindow = null;
 
-function display() {
-    const selectedColumns = Array.from(document.querySelectorAll('input.colSelect:checked')).map((input) =>
-        parseInt(input.value)
-    );
-
-    if (selectedColumns.length === 0) {
-        alert("Please select at least one column to display!");
-        return;
-    }
-
-    const profileName = lastVisitedProfile || localStorage.getItem("lastVisitedProfile");
-    if (!profileName || profileName === "(Aucun)") {
-        alert("No profile selected. Please select a profile from the list!");
-        return;
-    }
-    console.log(profileName);
-    // Récupérer les données du profil
-    const profileData = savedProfiles[profileName];
-    if (!profileData) {
-        alert(`Profile "${profileName}" does not exist!`);
-        return;
-    }
-    const selectedColNames = Object.keys(profileData).filter((_, index) => selectedColumns.includes(index));
-    const selectedColData = selectedColNames.map((column) => profileData[column]);
-    console.log(selectedColData);
-    console.log(selectedColNames);
-    localStorage.setItem('selectedColNames', JSON.stringify(selectedColNames));
-    localStorage.setItem('selectedColData', JSON.stringify(selectedColData));
-    localStorage.setItem('profileName', JSON.stringify(profileName));
-
-        // Vérifier si la fenêtre `display.html` est déjà ouverte
-    if (displayWindow && !displayWindow.closed) {
-        // Si déjà ouverte, envoyer une commande à la fenêtre pour qu'elle mette à jour son contenu
-        displayWindow.postMessage({ action: 'updateTable' }, '*');
-        displayWindow.focus(); // Ramener au premier plan
-    } else {
-        // Sinon, ouvrir une nouvelle fenêtre et conserver la référence
-        displayWindow = window.open('display.html', '_blank');
-    }
-
-}
 function simlilar_profile() {
 
     const selectedColumns = Array.from(document.querySelectorAll('input.colSelect:checked')).map((input) =>
@@ -561,6 +455,7 @@ function simlilar_profile() {
     localStorage.setItem('data_transform', JSON.stringify(data_transform));
     localStorage.setItem('profileName', JSON.stringify(profileName));
 
+    const similarityName = localStorage.getItem("similarityTabName") || "similaritytab";
     //Vérification et gestion de la fenêtre `similarity.html`
     if (similarityWindow && !similarityWindow.closed) {
         // Si la fenêtre existe et est ouverte, envoyer une commande pour mettre à jour
@@ -568,7 +463,7 @@ function simlilar_profile() {
         similarityWindow.focus(); // Ramener au premier plan
     } else {
         // Sinon, ouvrir une nouvelle fenêtre et conserver la référence
-        similarityWindow = window.open('similarity.html', '_blank');
+        similarityWindow = window.open('similarity.html', similarityName);
 
         // Attendre que la fenêtre soit prête (au cas où le script n'est pas chargé immédiatement)
         similarityWindow.onload = () => {
@@ -577,68 +472,20 @@ function simlilar_profile() {
     }
 }
 
-function virtual_profile() {
-    const selectedCols = Array.from(document.querySelectorAll('input.colSelect:checked')).map((input) =>
-        parseInt(input.value)
-    );
 
-    if (selectedCols.length === 0) {
-        alert("Please select at least one column to Similarity!");
-        return;
-    }
+ // On page load, register this tab as "Page1"
+        document.addEventListener("DOMContentLoaded", () => {
+            const pagehomeName = "pagehometab";
+            // Store the tab name for Page1
+            localStorage.setItem("pagehomeTabName", pagehomeName);
+            window.name = pagehomeName; // Assign a unique name to this tab
+        });
 
-    const profileName = lastVisitedProfile || localStorage.getItem("lastVisitedProfile");
-    console.log("Profilename: ",profileName);
-    if (!profileName || profileName === "(Aucun)") {
-        alert("No profile selected. Please select a profile from the list!");
-        return;
-    }
+        // When this tab is closed or refreshed, clear the reference in localStorage
+        window.addEventListener("beforeunload", () => {
+            localStorage.removeItem("page1TabName");
+        });
 
-    // Récupérer les données du profil
-    const profileData = savedProfiles[profileName];
-    let rows = [];
-
-    if (!profileData) {
-        alert(`Profile "${profileName}" does not exist!`);
-        return;
-    }
-    console.log(profileData);
-    // Ajouter les noms des colonnes comme première ligne
-    const columnNames = Object.keys(profileData); // Obtenir les clés des colonnes
-    rows.push(columnNames); // Première ligne avec les noms des colonnes
-
-    // Trouver le nombre maximum de lignes nécessaire
-    const maxRows = Math.max(...Object.values(profileData).map(col => col.length));
-
-    // Ajouter les données ligne par ligne
-    for (let rowIndex = 0; rowIndex < maxRows; rowIndex++) {
-        let row = columnNames.map(colName => profileData[colName][rowIndex] || ""); // Extraire les données par colonne
-        rows.push(row);
-    }
-
-    // Résultat final
-    console.log(rows);
-
-    // Stocker les colonnes et les lignes dans localStorage
-    localStorage.setItem('selectedColumns', JSON.stringify(selectedCols));
-    localStorage.setItem('rows', JSON.stringify(rows));
-    localStorage.setItem('profileName', JSON.stringify(profileName));
-
-    //Vérification et gestion de la fenêtre `virtual.html`
-    if (virtualWindow && !virtualWindow.closed) {
-        // Si la fenêtre existe et est ouverte, envoyer une commande pour mettre à jour
-        virtualWindow.postMessage({ action: 'updateTable' }, '*');
-        virtualWindow.focus(); // Ramener au premier plan
-    } else {
-        // Sinon, ouvrir une nouvelle fenêtre et conserver la référence
-        virtualWindow = window.open('virtual.html', '_blank');
-
-        // Attendre que la fenêtre soit prête (au cas où le script n'est pas chargé immédiatement)
-        virtualWindow.onload = () => {
-            virtualWindow.postMessage({ action: 'updateTable' }, '*');
-        };
-    }
-}
 function delete_delimiter() {
     if (rows.length === 0) {
         console.error("No data available for processing.");
@@ -670,3 +517,6 @@ function retirerLignesVides() {
     console.log("Empty lines removed. Here is the updated data:");
     console.log(rows);
 }
+
+
+

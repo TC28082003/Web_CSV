@@ -5,6 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Virtual sort</title>
     <link rel="stylesheet" href="style_table.css">
+            <style>
+        /* Style pour le bouton */
+        button {
+            position: relative;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        /* Style pour l'info-bulle */
+        .tooltip {
+            visibility: hidden;
+            width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 5px;
+            padding: 5px;
+            position: absolute;
+            bottom: 120%; /* Position sous l'élément */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* Petite flèche sous l'info-bulle */
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+
+        /* Afficher l'info-bulle au survol */
+        button:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
 </head>
 <body>
     <div class="table" id="table"></div>
@@ -13,48 +62,67 @@
         let selectedCols = [];
         let rows = [];
         let profileName = '';
+        let selectedRows = [];
+        let data_transform = [];
+
       // Écouter les messages de la fenêtre parent
         window.addEventListener('message', (event) => {
             if (event.data && event.data.action === 'updateTable') {
                 // Mettre à jour les valeurs depuis localStorage
-                const updatedCols = JSON.parse(localStorage.getItem('selectedColumns')) || [];
-                const updatedRows = JSON.parse(localStorage.getItem('rows')) || [];
+                const updatedCols = JSON.parse(localStorage.getItem('selectedCols')) || [];
+                const updatedRows = JSON.parse(localStorage.getItem('selectedRows')) || [];
+                const updatedRow = JSON.parse(localStorage.getItem('rows')) || [];
                 const updatedProfileName = localStorage.getItem('profileName') || '';
+                const updateddata_transform = JSON.parse(localStorage.getItem('data_transform')) || [];
                 // Réinitialiser les données globales
                 selectedCols.length = 0;
                 selectedCols.push(...updatedCols);
+                selectedRows.length = 0;
+                selectedRows.push(...updatedRows);
                 rows.length = 0;
-                rows.push(...updatedRows);
+                rows.push(...updatedRow);
                 profileName = updatedProfileName;
-
+                data_transform.length = 0;
+                data_transform.push(...updateddata_transform);
                 // Mettre à jour le tableau
                 enter_virtual_chiffre();
             }
         });
 
         // Initier le tableau lors du premier chargement
-        selectedCols = JSON.parse(localStorage.getItem('selectedColumns')) || [];
+        selectedCols = JSON.parse(localStorage.getItem('selectedCols')) || [];
+        selectedRows = JSON.parse(localStorage.getItem('selectedRows')) || [];
         rows = JSON.parse(localStorage.getItem('rows')) || [];
         profileName = JSON.parse(localStorage.getItem('profileName')) || '';
-        let headers = rows[0];
-        headers.push("Status");
+        data_transform = JSON.parse(localStorage.getItem('data_transform')) || [];
+        enter_virtual_chiffre()
+
+        function cleanProfileName(name) {
+            // Replace unwanted characters " and \ with an empty string
+            return name.replace(/["\\]/g, '');
+        }
+        console.log(profileName);
 
         function enter_virtual_chiffre() {
+            profileName = cleanProfileName(profileName);
             let table = `<h2>Enter data for ${profileName} </h2><table><thead><tr>`;
-
-            // Faire des colonnes en tête
+            // Create column headers
             selectedCols.forEach(colIndex => {
-                table += `<th>${rows[0][colIndex]}</th>`;
+                table += `<th>${data_transform[0][colIndex]}</th>`;
             });
             table += "</tr></thead><tbody>";
 
-            // Ajouter une ligne avec des champs d'entrée
-            table += "<tr>";
-            selectedCols.forEach(() => {
-                table += `<td><input type="text" placeholder="Enter value"></td>`;
+            // Add rows with input fields
+            selectedRows.forEach((rowIndex) => {
+                table += "<tr>";
+                selectedCols.forEach((colIndex) => {
+                    table += `<td><input type="text" placeholder="Enter value" value="${data_transform[rowIndex][colIndex]}" ></td>`;
+                });
+                table += "</tr>";
             });
-            table += "</tr></tbody></table>";
+            table += "</tbody></table>";
 
+            // Inject the table into the DOM
             document.getElementById('table').innerHTML = table;
         }
 
@@ -104,6 +172,7 @@
             lines.push({ original: fullRows[i], filtered: filteredRows[i] });
         }
         console.log(lines);
+
         let distanceMin = [];
         // Calculer par le euclidean algorithme
         for (let i = 0; i < lines.length; i++) {
@@ -130,7 +199,12 @@
     function calculer_virtual_sort() {
     // Récupérer toutes les lignes ajoutées dynamiquement par l'utilisateur
     const tableBody = document.querySelector('#table table tbody');
-    const virtual_Rows = [];
+    const virtual_Rows_final = [];
+    let headers_virtual = [];
+    selectedCols.forEach((colIndex) => {
+        headers_virtual.push(data_transform[0][colIndex]);
+    });
+    virtual_Rows_final.push(headers_virtual);
 
     if (tableBody) {
         Array.from(tableBody.rows).forEach(row => {
@@ -138,11 +212,12 @@
                 const input = cell.querySelector("input");
                 return input ? parseFloat(input.value) || 0 : 0; // Récupérer la valeur entrée ou 0 par défaut
             });
-            virtual_Rows.push(rowData);
+            virtual_Rows_final.push(rowData);
         });
     }
-    console.log(virtual_Rows);
-    console.log(selectedCols);
+    console.log(virtual_Rows_final);
+    const virtual_Rows = virtual_Rows_final.slice(1);
+
     // Vérifier si des lignes ont été sélectionnées / remplies
     if (virtual_Rows.length === 0 || virtual_Rows.some(row => row.every(value => value === 0))) {
         alert("Row not valid!");
@@ -150,28 +225,45 @@
     }
 
         // Des valeurs pour les colonnes on a chosi
-        const filteredRows = rows.slice(1).map(row => {
+        const filteredRows = data_transform.slice(1).map(row => {
             return selectedCols.map(colIndex => parseFloat(row[colIndex]) || 0);
         });
 
         // Valeur original dans ce fichier
         const fullRows = rows.slice(1);
-
+        console.log("Full:",fullRows);
+        console.log("Fil: ",filteredRows);
+        console.log("Virtual: ",virtual_Rows);
         // Données après similarité
         let fullData = [];
+
         const orderedData = trierParDistanceEuclidienne(fullRows, virtual_Rows, filteredRows);
         console.log(orderedData);
 
         const rowLength = orderedData[0].length;
-        // Préparer les virtual_Rows en étendant leurs colonnes
-        let formattedVirtualRows = virtual_Rows.map(row => {
-            let newRow = Array(rowLength).fill(null); // Créer une ligne avec des "vides"
-            selectedCols.forEach((colIdx, i) => {
-                newRow[colIdx] = row[i]; // Ajouter les valeurs sélectionnées aux positions correspondantes
-            });
-            newRow.push("Virtual")
-            return newRow;
-        });
+        console.log("Rows:",rows);
+        console.log("virtual_Rows: ",virtual_Rows_final);
+        // Initialisation de formattedVirtualRows
+        const formattedVirtualRows = [];
+
+        // Construire formattedVirtualRows
+        for (let i = 1; i < virtual_Rows_final.length; i++) {
+            const row = virtual_Rows_final[i];
+            const formattedRow = Array(rows[0].length).fill(""); // Initialiser une ligne vide
+            for (let k = 0; k < formattedRow.length; k++) {
+                for (let j = 0; j < row.length; j++) {
+                    if (rows[0][k].trim() === virtual_Rows_final[0][j].trim()) {
+                        formattedRow[k] = row[j];
+                    }
+                }
+            }
+            formattedRow.push("Virtual");
+            // Ajouter la ligne formatée à la liste finale
+            formattedVirtualRows.push(formattedRow);
+        }
+        // Affichage du résultat
+        console.log(formattedVirtualRows);
+
 
         // Ajouter "Real" à la fin de chaque ligne du orderedData
         let formattedOrderedData = orderedData.map(row => {
@@ -202,7 +294,6 @@
         localStorage.setItem('table', JSON.stringify(table));
         localStorage.setItem('profileName', JSON.stringify(profileName));
         localStorage.setItem('fullData', JSON.stringify(fullData));
-        localStorage.setItem('headers', JSON.stringify(headers));
         // Vérifier si la fenêtre `display.html` est déjà ouverte
         if (virtual_sortWindow && !virtual_sortWindow.closed) {
             // Si déjà ouverte, envoyer une commande à la fenêtre pour qu'elle mette à jour son contenu
@@ -214,10 +305,47 @@
         }
     }
 
+    let similarityWindow = null;
+    function return_to_display() {
+        const similarityName = localStorage.getItem("similarityTabName") || "similaritytab";
+        //Vérification et gestion de la fenêtre `similarity.html`
+        if (similarityWindow && !similarityWindow.closed) {
+            // Si la fenêtre existe et est ouverte, envoyer une commande pour mettre à jour
+            similarityWindow.focus(); // Ramener au premier plan
+        } else {
+            // Sinon, ouvrir une nouvelle fenêtre et conserver la référence
+            similarityWindow = window.open("similarity.html", similarityName);
+            // Attendre que la fenêtre soit prête (au cas où le script n'est pas chargé immédiatement)
+            similarityWindow.onload = () => {
+                similarityWindow.postMessage({ action: 'updateTable' }, '*');
+            };
+        }
+    }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const virtualName = "virtualtab";
+            // Store the tab name for Page2
+            localStorage.setItem("virtualTabName", virtualName);
+            window.name = virtualName; // Assign a unique name to this tab
+        });
+
+            // When this tab is closed or refreshed, clear the reference in localStorage
+        window.addEventListener("beforeunload", () => {
+                localStorage.removeItem("virtualTabName");
+        });
     </script>
     <br>
-    <button onclick="add_lignes()">Add line</button>
-    <button onclick="delete_lignes()">Delete line</button>
-    <button onclick="calculer_virtual_sort()">Calcul virtual sort</button>
+    <button onclick="add_lignes()">Add line
+        <div class="tooltip">Add a line to enter data</div>
+    </button>
+    <button onclick="delete_lignes()">Delete line
+        <div class="tooltip">Delete a line from enter data</div>
+    </button>
+    <button onclick="calculer_virtual_sort()">Virtual sort
+        <div class="tooltip">Calculation based on entered data</div>
+    </button>
+    <button onclick="return_to_display()">Display patients
+        <div class="tooltip">Click to return to the display patients.</div>
+    </button>
 </body>
 </html>

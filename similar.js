@@ -1,12 +1,17 @@
         // Variables globales pour les colonnes et les lignes
         let selectedColumns = [];
         let data_transform = [];
-        let profileName = '';
-
+        let profileName = null;
         // Afficher le tableau
+        function cleanProfileName(name) {
+            // Replace unwanted characters " and \ with an empty string
+            return name.replace(/["\\]/g, '');
+        }
+        console.log(profileName);
         function afficherTableau() {
+            profileName = cleanProfileName(profileName);
             console.log("Data: ",data_transform);
-            let table = `<h1><P></P>Profile: ${profileName}</h1><table><thead><tr>`;
+            let table = `<h1><P></P> ${profileName}</h1><table><thead><tr>`;
             table += "<th>Select lines</th>";
 
             // Ajouter une ligne de cases à cocher pour les colonnes
@@ -118,7 +123,6 @@ function trierParDistanceEuclidienne(fullRows, selectedRows, filteredRows) {
 }
 
 let result_similarWindow = null;
-
 function calculer_similarity() {
     const selectedRows = Array.from(document.querySelectorAll('input.rowSelect:checked')).map(input => parseInt(input.value));
     const selectedCols = Array.from(document.querySelectorAll('input.columnSelect:checked')).map(input => parseInt(input.value));
@@ -131,6 +135,7 @@ function calculer_similarity() {
     }
     if (selectedCols.length === 0) {
         alert("Please select at least one column!");
+        return;
     }
 
     // Des valeurs pour les colonnes on a chosi
@@ -138,8 +143,10 @@ function calculer_similarity() {
         return selectedCols.map(colIndex => parseFloat(row[colIndex]) || 0);
     });
 
+    console.log("Fil: ",filteredRows);
     // Valeur original dans ce fichier
     const fullRows = rows.slice(1);
+    console.log("Full: ",fullRows);
 
     // Données après similarité
     const orderedData = trierParDistanceEuclidienne(fullRows, selectedRows, filteredRows);
@@ -161,12 +168,78 @@ function calculer_similarity() {
     table += "</tbody></table></div>";
     localStorage.setItem('profileName', JSON.stringify(profileName));
     localStorage.setItem('table', JSON.stringify(table)); // Avec un 'I' majuscule    // Vérifier si la fenêtre `display.html` est déjà ouverte
+    const result_similarName = localStorage.getItem("result_similarTabName") || "result_similartab";
     if (result_similarWindow && !result_similarWindow.closed) {
         // Si déjà ouverte, envoyer une commande à la fenêtre pour qu'elle mette à jour son contenu
         result_similarWindow.postMessage({ action: 'updateTable' }, '*');
         result_similarWindow.focus(); // Ramener au premier plan
     } else {
         // Sinon, ouvrir une nouvelle fenêtre et conserver la référence
-        result_similarWindow = window.open('result_similar.html', '_blank');
+        result_similarWindow = window.open('result_similar.html', result_similarName);
     }
 }
+
+
+let virtualWindow = null;
+function virtual_profile() {
+    const selectedRows = Array.from(document.querySelectorAll('input.rowSelect:checked')).map(input => parseInt(input.value));
+    const selectedCols = Array.from(document.querySelectorAll('input.columnSelect:checked')).map(input => parseInt(input.value));
+    let rows = getTableData();
+    if (selectedRows.length === 0) {
+        alert("Please select at least one row!");
+        return;
+    }
+    if (selectedCols.length === 0) {
+        alert("Please select at least one column!");
+        return;
+    }
+
+    // Stocker les colonnes et les lignes dans localStorage
+    localStorage.setItem('selectedRows', JSON.stringify(selectedRows));
+    localStorage.setItem('selectedCols', JSON.stringify(selectedCols));
+    localStorage.setItem('rows', JSON.stringify(rows));
+    localStorage.setItem('profileName', JSON.stringify(profileName));
+    localStorage.setItem('data_transform', JSON.stringify(data_transform));
+
+    const virtualName = localStorage.getItem("virtualTabName") || "virtualtab";
+    //Vérification et gestion de la fenêtre `virtual.html`
+    if (virtualWindow && !virtualWindow.closed) {
+        // Si la fenêtre existe et est ouverte, envoyer une commande pour mettre à jour
+        virtualWindow.postMessage({ action: 'updateTable' }, '*');
+        virtualWindow.focus(); // Ramener au premier plan
+    } else {
+        // Sinon, ouvrir une nouvelle fenêtre et conserver la référence
+        virtualWindow = window.open('virtual.html', virtualName);
+    }
+}
+
+let pagehomeWindow = null;
+function return_home_screen() {
+    const pagehomeName = localStorage.getItem("pagehomeTabName") || "pagehometab";
+    //Vérification et gestion de la fenêtre `similarity.html`
+    if (pagehomeWindow && !pagehomeWindow.closed) {
+        // Si la fenêtre existe et est ouverte, envoyer une commande pour mettre à jour
+        pagehomeWindow.focus(); // Ramener au premier plan
+    } else {
+        // Sinon, ouvrir une nouvelle fenêtre et conserver la référence
+        pagehomeWindow = window.open("pagehome.html", pagehomeName);
+        // Attendre que la fenêtre soit prête (au cas où le script n'est pas chargé immédiatement)
+        pagehomeWindow.onload = () => {
+            pagehomeWindow.postMessage({ action: 'updateTable' }, '*');
+        };
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const similarityName = "similaritytab";
+    // Store the tab name for Page2
+    localStorage.setItem("similarityTabName", similarityName);
+    window.name = similarityName; // Assign a unique name to this tab
+});
+
+// When this tab is closed or refreshed, clear the reference in localStorage
+window.addEventListener("beforeunload", () => {
+    localStorage.removeItem("similarityTabName");
+});
+
+
