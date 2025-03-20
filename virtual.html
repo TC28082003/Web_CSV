@@ -5,55 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Virtual sort</title>
     <link rel="stylesheet" href="style_table.css">
-            <style>
-        /* Style pour le bouton */
-        button {
-            position: relative;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-
-        /* Style pour l'info-bulle */
-        .tooltip {
-            visibility: hidden;
-            width: 250px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 5px;
-            padding: 5px;
-            position: absolute;
-            bottom: 120%; /* Position sous l'élément */
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        /* Petite flèche sous l'info-bulle */
-        .tooltip::after {
-            content: '';
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: #333 transparent transparent transparent;
-        }
-
-        /* Afficher l'info-bulle au survol */
-        button:hover .tooltip {
-            visibility: visible;
-            opacity: 1;
-        }
-    </style>
 </head>
 <body>
     <div class="table" id="table"></div>
@@ -235,12 +186,10 @@
         console.log("Fil: ",filteredRows);
         console.log("Virtual: ",virtual_Rows);
         // Données après similarité
-        let fullData = [];
 
         const orderedData = trierParDistanceEuclidienne(fullRows, virtual_Rows, filteredRows);
         console.log(orderedData);
 
-        const rowLength = orderedData[0].length;
         console.log("Rows:",rows);
         console.log("virtual_Rows: ",virtual_Rows_final);
         // Initialisation de formattedVirtualRows
@@ -295,13 +244,14 @@
         localStorage.setItem('profileName', JSON.stringify(profileName));
         localStorage.setItem('fullData', JSON.stringify(fullData));
         // Vérifier si la fenêtre `display.html` est déjà ouverte
+        const result_virtualName = localStorage.getItem("result_virtualTabName") || "result_virtualtab";
         if (virtual_sortWindow && !virtual_sortWindow.closed) {
             // Si déjà ouverte, envoyer une commande à la fenêtre pour qu'elle mette à jour son contenu
             virtual_sortWindow.postMessage({ action: 'updateTable' }, '*');
             virtual_sortWindow.focus(); // Ramener au premier plan
         } else {
             // Sinon, ouvrir une nouvelle fenêtre et conserver la référence
-            virtual_sortWindow = window.open('result_virtual.html', '_blank');
+            virtual_sortWindow = window.open('result_virtual.html', result_virtualName);
         }
     }
 
@@ -335,16 +285,16 @@
         });
     </script>
     <br>
-    <button onclick="add_lignes()">Add line
+    <button class="button2" onclick="add_lignes()">Add line
         <div class="tooltip">Add a line to enter data</div>
     </button>
-    <button onclick="delete_lignes()">Delete line
+    <button class="button2" onclick="delete_lignes()">Delete line
         <div class="tooltip">Delete a line from enter data</div>
     </button>
-    <button onclick="calculer_virtual_sort()">Virtual sort
+    <button class="button2" onclick="calculer_virtual_sort()">Virtual sort
         <div class="tooltip">Calculation based on entered data</div>
     </button>
-    <button onclick="return_to_display()">Display patients
+    <button class="button2" onclick="return_to_display()">Display patients
         <div class="tooltip">Click to return to the display patients.</div>
     </button>
 </body>

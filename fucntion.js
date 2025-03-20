@@ -112,15 +112,17 @@ function display_list_profiles(contenu, fichier) {
 
     // Ajout d'un bouton pour le nom du fichier
     htmlContent += `
-        <fieldset><legend>Files list</legend>
-            <div id ="fileListContainer" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
-            </div>
-        </fieldset>
+        <fieldset>
+    <legend>Files list</legend>
+    <div id="fileListContainer" class="file-list">
+      <!-- Your file items will be appended here -->
+    </div>
+</fieldset>
     `;
 
     htmlContent += `
         <fieldset><legend>Previous selections</legend>
-            <div id ="profileListContainer" style=" display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
+            <div id ="profileListContainer" class="select-list">
             </div>
         </fieldset>
     `;
@@ -137,13 +139,13 @@ function display_list_profiles(contenu, fichier) {
     // Ajouter les boutons pour sauvegarder et afficher
     htmlContent += `
         <div style="margin-top: 20px; text-align: center;">
-            <button onclick="Save_profile()">
+            <button class="button1" onclick="Save_profile()">
                 Save selection
             </button>
-            <button onclick="delete_profil()">
+            <button class="button1" onclick="delete_profil()">
                 Delete data
             </button>
-            <button onclick="simlilar_profile()">
+            <button class="button1" onclick="simlilar_profile()">
                 Display patients
             </button>
         </div>
@@ -222,18 +224,12 @@ function Save_profile() {
         profile_parent_parent = profileNameparent + "_parent";
     }
     savedprofilesparent[profile_parent] = profileNameparent;
-
     localStorage.setItem('savedprofilesparent', JSON.stringify(savedprofilesparent));
-
     localStorage.setItem('savedProfiles', JSON.stringify(savedProfiles));
     console.log(savedprofilesparent);
     console.log(savedProfiles);
-    updateFileList();
     display_profile(profileName);
-
-    document.getElementById("profileName").value = "";
     Array.from(document.querySelectorAll('input[name="columns"]')).forEach((checkbox) => (checkbox.checked = false));
-
     alert(`Profile "${profileName}" has been saved successfully!`);
 }
 
@@ -263,6 +259,8 @@ function updateFileList() {
                 border-radius: 30px;
                 font-size: 16px;
                 cursor: pointer;
+                transition: all 0.3s ease-in-out;
+                text-align: center;
             `;
 
             // Ajouter un événement 'click'
@@ -318,6 +316,8 @@ function display_profile(profileName) {
                 border-radius: 30px;
                 font-size: 16px;
                 cursor: pointer;
+                transition: all 0.3s ease-in-out;
+                text-align: center;
             `;
 
             // Ajouter un événement 'click'
@@ -349,7 +349,7 @@ function display_profile_colums(profileName) {
     const columnHeaders = Object.keys(profileData); // Les colonnes (les clés)
 
     // Obtenir l'en-tête de colonnes (première ligne du fichier)
-    let htmlColonnes = "<div style='display: grid; grid-template-columns: repeat(8, 1fr); row-gap: 0; column-gap: 0'>";
+    let htmlColonnes = "<div class='display-columns'>";
 
     for (let j = 0; j < columnHeaders.length; j++) {
         // Générer chaque colonne

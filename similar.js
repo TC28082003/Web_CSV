@@ -222,7 +222,7 @@ function return_home_screen() {
         pagehomeWindow.focus(); // Ramener au premier plan
     } else {
         // Sinon, ouvrir une nouvelle fenêtre et conserver la référence
-        pagehomeWindow = window.open("pagehome.html", pagehomeName);
+        pagehomeWindow = window.open("index.html", pagehomeName);
         // Attendre que la fenêtre soit prête (au cas où le script n'est pas chargé immédiatement)
         pagehomeWindow.onload = () => {
             pagehomeWindow.postMessage({ action: 'updateTable' }, '*');
