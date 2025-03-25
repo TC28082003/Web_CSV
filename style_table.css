@@ -4,11 +4,18 @@ body {
     padding: 20px;
     background-color: #f4f4f4;
     text-align: center;
+    font-size: 0.9em;
 }
 table {
     border-collapse: collapse;
     width: 80%;
     margin: auto;
+}
+.table {
+    max-height: 80vh;
+    overflow-y: auto;
+    border-radius: 10px;
+    border: 5px dashed #999;
 }
 th, td {
     border: 1px solid black;
@@ -34,7 +41,7 @@ tr:nth-child(even) {
             cursor: pointer;
             height: 45px;
             width: 15%;
-            border-radius: 5px;
+            border-radius: 30px;
         }
 
         .button1 {
@@ -48,7 +55,7 @@ tr:nth-child(even) {
             cursor: pointer;
             height: 45px;
             width: 15%;
-            border-radius: 5px;
+            border-radius: 30px;
         }
 
         .button2 {
@@ -62,7 +69,7 @@ tr:nth-child(even) {
             cursor: pointer;
             height: 45px;
             width: 15%;
-            border-radius: 5px;
+            border-radius: 30px;
         }
             /* Media query for tablets */
     @media (max-width: 1000px) {
@@ -158,9 +165,18 @@ tr:nth-child(even) {
             visibility: visible;
             opacity: 1;
         }
-.table {
-    max-height: 80vh;
-    overflow-y: auto;
-    border-radius: 60px;
-    border: 5px dashed #999;
+input[type="text"] {
+    width: 100%; /* Prend toute la largeur de son conteneur */
+    min-width: 40px;
+    padding: 10px; /* Ajoute un peu d'espace à l'intérieur de l'input */
+    border: 1px solid #ccc; /* Bordure grise claire */
+    border-radius: 4px; /* Coins arrondis */
+    box-sizing: border-box; /* Inclut le padding et la bordure dans la largeur totale */
+    font-size: 12px; /* Taille de police */
+    transition: border-color 0.3s; /* Transition douce pour le changement de couleur de bordure */
+}
+
+input[type="text"]:focus {
+    border-color: #007BFF; /* Change la couleur de la bordure au focus */
+    outline: none; /* Supprime le contour par défaut */
 }

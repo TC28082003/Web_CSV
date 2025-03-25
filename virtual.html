@@ -47,7 +47,7 @@
         profileName = JSON.parse(localStorage.getItem('profileName')) || '';
         data_transform = JSON.parse(localStorage.getItem('data_transform')) || [];
         enter_virtual_chiffre()
-
+        console.log(data_transform);
         function cleanProfileName(name) {
             // Replace unwanted characters " and \ with an empty string
             return name.replace(/["\\]/g, '');
@@ -59,7 +59,7 @@
             let table = `<h2>Enter data for ${profileName} </h2><table><thead><tr>`;
             // Create column headers
             selectedCols.forEach(colIndex => {
-                table += `<th>${data_transform[0][colIndex]}</th>`;
+                table += `<th><input type='checkbox' class='columnSelect' value='${colIndex}'>${data_transform[0][colIndex]}</th>`;
             });
             table += "</tr></thead><tbody>";
 
@@ -104,6 +104,70 @@
             tableBody.deleteRow(tableBody.rows.length - 1);
         }
     }
+
+let savedvirtualProfiles = JSON.parse(localStorage.getItem('savedvirtualProfiles')) || {}; // Object to store saved profiles
+savedvirtualProfiles.forEach(profileName)
+function add_virtual_profile() {
+    const tableBody = document.querySelector('#table table tbody');
+    const formattedVirtualRows = [];
+    const virtualprofileName = prompt("Please enter a profile name :");
+    savedvirtualProfiles[profileName] = JSON.parse(localStorage.getItem(`${profileName}virtual`)) || {};
+    savedvirtualProfiles[profileName][`${profileName}_data`] = data_transform;
+    let header_virtual = [];
+    selectedCols.forEach(colIndex => {
+                header_virtual.push(data_transform[0][colIndex]);
+    });
+    formattedVirtualRows.push(header_virtual);
+    if (tableBody) {
+        Array.from(tableBody.rows).forEach(row => {
+            const rowData = Array.from(row.cells).map(cell => {
+                const input = cell.querySelector("input");
+                return input ? input.value : null; // Récupérer la valeur entrée ou null par défaut
+            });
+            formattedVirtualRows.push(rowData);
+        });
+    }
+    console.log(formattedVirtualRows);
+    savedvirtualProfiles[profileName][virtualprofileName] = formattedVirtualRows;
+    localStorage.setItem(`${profileName}virtual`, JSON.stringify(savedvirtualProfiles[profileName]));
+    // Vérifier si le nom du profil est fourni
+    if (virtualprofileName) {
+        const virtualListContainer = document.getElementById("virtualListContainer");
+        const profileButton = document.createElement("button");
+        profileButton.textContent = virtualprofileName;
+        profileButton.style.cssText = `
+                width: 100%;
+                padding: 10px;
+                margin: 5px 0;
+                color: white;
+                background-color: #007bff;
+                border: none;
+                border-radius: 30px;
+                font-size: 16px;
+                cursor: pointer;
+                transition: all 0.3s ease-in-out;
+                text-align: center;
+            `;
+
+            // Ajouter un événement 'click'
+        profileButton.onclick = () => {
+            // Réinitialiser la couleur de tous les boutons
+            Array.from(virtualListContainer.children).forEach((btn) => {
+                btn.style.backgroundColor = "#007bff"; // Couleur par défaut
+            });
+
+            // Changer la couleur du bouton cliqué
+            profileButton.style.backgroundColor = "#28a745"; // Couleur par exemple 'vert'
+        };
+
+            // Ajouter le bouton au conteneur
+            virtualListContainer.appendChild(profileButton);
+    } else {
+        alert("Please enter a name for the virtual profile."); // Alerte si le nom n'est pas fourni
+    }
+}
+
+console.log(savedvirtualProfiles);
     function euclideanDistance(vec1, vec2) {
         if (!vec1 || !vec2 || vec1.length !== vec2.length) {
            throw new Error('Vectors are undefined or of different lengths');
@@ -139,10 +203,8 @@
         // Sort par le distance
         distanceMin.sort((a, b) => a.distance_min - b.distance_min);
         console.log(distanceMin);
-        let data = []
-        data = distanceMin.map(item => item.row);
         // Return un nouveau table après similarité
-        return data;
+        return distanceMin.map(item => item.row);
     }
 
 
@@ -150,9 +212,17 @@
     function calculer_virtual_sort() {
     // Récupérer toutes les lignes ajoutées dynamiquement par l'utilisateur
     const tableBody = document.querySelector('#table table tbody');
+    const selectedColums = Array.from(document.querySelectorAll('input.columnSelect:checked')).map(input => parseInt(input.value));
+    if(selectedColums.length === 0){
+        alert("Please select at least one column!");
+        return;
+    }
+    console.log(selectedCols);
+    console.log(selectedColums);
     const virtual_Rows_final = [];
     let headers_virtual = [];
-    selectedCols.forEach((colIndex) => {
+    const formattedVirtualRows = [];
+    selectedColums.forEach((colIndex) => {
         headers_virtual.push(data_transform[0][colIndex]);
     });
     virtual_Rows_final.push(headers_virtual);
@@ -163,9 +233,36 @@
                 const input = cell.querySelector("input");
                 return input ? parseFloat(input.value) || 0 : 0; // Récupérer la valeur entrée ou 0 par défaut
             });
-            virtual_Rows_final.push(rowData);
+            let header_virtual = [];
+            selectedCols.forEach(colIndex => {
+                header_virtual.push(data_transform[0][colIndex]);
+            });
+
+            const rowDatafull = [];
+            rowDatafull.push(header_virtual);
+            rowDatafull.push(rowData);
+            console.log("Full virtual: ",rowDatafull);
+            const data_calcul = [];
+            virtual_Rows_final[0].forEach(header => {
+                for (let i = 0; i < rowDatafull[0].length; i++) {
+                    if(rowDatafull[0][i].trim() === header){
+                        data_calcul.push(rowDatafull[1][i]);
+                    }
+                }
+            });
+            virtual_Rows_final.push(data_calcul);
         });
     }
+    if (tableBody) {
+        Array.from(tableBody.rows).forEach(row => {
+            const rowData = Array.from(row.cells).map(cell => {
+                const input = cell.querySelector("input");
+                return input ? input.value: null; // Récupérer la valeur entrée ou 0 par défaut
+            });
+            formattedVirtualRows.push(rowData);
+        });
+    }
+    console.log("Virtual rows: ",formattedVirtualRows);
     console.log(virtual_Rows_final);
     const virtual_Rows = virtual_Rows_final.slice(1);
 
@@ -177,7 +274,7 @@
 
         // Des valeurs pour les colonnes on a chosi
         const filteredRows = data_transform.slice(1).map(row => {
-            return selectedCols.map(colIndex => parseFloat(row[colIndex]) || 0);
+            return selectedColums.map(colIndex => parseFloat(row[colIndex]) || 0);
         });
 
         // Valeur original dans ce fichier
@@ -192,26 +289,13 @@
 
         console.log("Rows:",rows);
         console.log("virtual_Rows: ",virtual_Rows_final);
-        // Initialisation de formattedVirtualRows
-        const formattedVirtualRows = [];
 
-        // Construire formattedVirtualRows
-        for (let i = 1; i < virtual_Rows_final.length; i++) {
-            const row = virtual_Rows_final[i];
-            const formattedRow = Array(rows[0].length).fill(""); // Initialiser une ligne vide
-            for (let k = 0; k < formattedRow.length; k++) {
-                for (let j = 0; j < row.length; j++) {
-                    if (rows[0][k].trim() === virtual_Rows_final[0][j].trim()) {
-                        formattedRow[k] = row[j];
-                    }
-                }
-            }
-            formattedRow.push("Virtual");
-            // Ajouter la ligne formatée à la liste finale
-            formattedVirtualRows.push(formattedRow);
-        }
-        // Affichage du résultat
-        console.log(formattedVirtualRows);
+        // Ajouter "Real" à la fin de chaque ligne du orderedData
+        let formattedVirtualRows1 = formattedVirtualRows.map(row => {
+            let newRow = [...row]; // Faire une copie de la ligne
+            newRow.push("Virtual"); // Ajouter "Real" comme dernier élément de la ligne
+            return newRow;
+        });
 
 
         // Ajouter "Real" à la fin de chaque ligne du orderedData
@@ -222,7 +306,7 @@
         });
 
         // Insérer les virtual_Rows au début de orderedData
-        fullData = [...formattedVirtualRows, ...formattedOrderedData];
+        fullData = [...formattedVirtualRows1, ...formattedOrderedData];
         console.log(fullData);
         // Creer un table pour des nouveau fichier .csv après similarité
         let table = `<div class=\"table\" id=\"table\"> <h1>Result virtual sort for ${profileName}</h1><table><thead><tr>`;
@@ -285,17 +369,25 @@
         });
     </script>
     <br>
+    <fieldset><legend>Virtual profile list</legend>
+            <div id ="virtualListContainer" class="virtual-list">
+            </div>
+    </fieldset>
+    <br>
     <button class="button2" onclick="add_lignes()">Add line
-        <div class="tooltip">Add a line to enter data</div>
+        <span class="tooltip">Add a line to enter data</span>
     </button>
     <button class="button2" onclick="delete_lignes()">Delete line
-        <div class="tooltip">Delete a line from enter data</div>
+        <span class="tooltip">Delete a line from enter data</span>
+    </button>
+    <button class="button2" onclick="add_virtual_profile()">Add virtual profile
+        <span class="tooltip">Add virtual patients to your profile</span>
     </button>
     <button class="button2" onclick="calculer_virtual_sort()">Virtual sort
-        <div class="tooltip">Calculation based on entered data</div>
+        <span class="tooltip">Calculation based on entered data</span>
     </button>
     <button class="button2" onclick="return_to_display()">Display patients
-        <div class="tooltip">Click to return to the display patients.</div>
+        <span class="tooltip">Click to return to the display patients.</span>
     </button>
 </body>
 </html>

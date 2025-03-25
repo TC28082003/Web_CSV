@@ -15,7 +15,7 @@
             table += "<th>Select lines</th>";
 
             // Ajouter une ligne de cases à cocher pour les colonnes
-            selectedColumns.forEach((colIndex, colPosition) => {
+            selectedColumns.forEach((colIndex) => {
                 table += `<th><input type='checkbox' class='columnSelect' value='${colIndex}'> ${data_transform[0][colIndex]}</th>`;
             });
 
@@ -129,13 +129,24 @@ function calculer_similarity() {
     let rows = getTableData();
     console.log("Rows: ",rows);
 
+    const tooltip = document.getElementById('tooltip');
+    tooltip.style.display = "none"; // Masquer le tooltip par défaut
+
     if (selectedRows.length === 0) {
+        tooltip.textContent = "if no line selected, message: \"Please select at least one patient!\"";
+        tooltip.style.display = "block"; // Afficher le tooltip
         alert("Please select at least one row!");
         return;
     }
-    if (selectedCols.length === 0) {
+    else if (selectedCols.length === 0) {
+        tooltip.textContent = "if no column selected, message: \"Please select at least one column!\"";
+        tooltip.style.display = "block"; // Afficher le tooltip
         alert("Please select at least one column!");
         return;
+    }
+    else{
+        tooltip.textContent = "Click here to see the result!";
+        tooltip.style.display = "block"; // Afficher le tooltip
     }
 
     // Des valeurs pour les colonnes on a chosi
@@ -183,15 +194,21 @@ function calculer_similarity() {
 let virtualWindow = null;
 function virtual_profile() {
     const selectedRows = Array.from(document.querySelectorAll('input.rowSelect:checked')).map(input => parseInt(input.value));
-    const selectedCols = Array.from(document.querySelectorAll('input.columnSelect:checked')).map(input => parseInt(input.value));
     let rows = getTableData();
+    let selectedCols = selectedColumns;
+    console.log(selectedColumns);
+    const tooltip1 = document.getElementById('tooltip1');
+    tooltip1.style.display = "none"; // Masquer le tooltip par défaut
+
     if (selectedRows.length === 0) {
+        tooltip1.textContent = "if no line selected, message: \"Please select at least one patient!\"";
+        tooltip1.style.display = "block"; // Afficher le tooltip
         alert("Please select at least one row!");
         return;
     }
-    if (selectedCols.length === 0) {
-        alert("Please select at least one column!");
-        return;
+    else {
+        tooltip1.textContent = "Click here to display virtual patients!";
+        tooltip1.style.display = "block"; // Afficher le tooltip
     }
 
     // Stocker les colonnes et les lignes dans localStorage

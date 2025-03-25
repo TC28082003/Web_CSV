@@ -407,25 +407,17 @@ function delete_profil() {
 }
 
 let similarityWindow = null;
-
 function simlilar_profile() {
-
-    const selectedColumns = Array.from(document.querySelectorAll('input.colSelect:checked')).map((input) =>
+    let  selectedColumns = Array.from(document.querySelectorAll('input.colSelect:checked')).map((input) =>
         parseInt(input.value)
     );
-
-    if (selectedColumns.length === 0) {
-        alert("Please select at least one column to Similarity!");
-        return;
-    }
-
+    console.log("Columns: ",selectedColumns);
     const profileName = lastVisitedProfile || localStorage.getItem("lastVisitedProfile");
     console.log("Profilename: ",profileName);
     if (!profileName || profileName === "(Aucun)") {
         alert("No profile selected. Please select a profile from the list!");
         return;
     }
-
     // Récupérer les données du profil
     const profileData = savedProfiles[profileName];
     let data_transform = [];
@@ -450,6 +442,22 @@ function simlilar_profile() {
 
     // Résultat final
     console.log(data_transform);
+
+    if (savedprofilesparent[profileName + "_parent"]){
+        let length_data = data_transform[0].length;
+        if (selectedColumns.length === 0){
+            selectedColumns = [...Array(length_data)].map((_, index) => index);
+        }
+    }
+    else {
+        if (selectedColumns.length === 0) {
+            alert("Please select at least one column to Similarity!");
+            return;
+        }
+    }
+
+    console.log("Columns: ",selectedColumns);
+
 
     localStorage.setItem('selectedColumns', JSON.stringify(selectedColumns));
     localStorage.setItem('data_transform', JSON.stringify(data_transform));

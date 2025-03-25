@@ -46,7 +46,7 @@ fieldset {
     background: white;
     padding: 20px;
     border-radius: 15px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
     border: 2px solid #007bff;
 }
 
@@ -159,7 +159,7 @@ legend {
     background-color: #e6f0ff;
     border-color: #0056b3;
     transform: scale(1.03);
-    box-shadow: 0px 4px 10px rgba(0, 123, 255, 0.25);
+    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.25);
     color: #0056b3;
 }
 
@@ -241,30 +241,6 @@ label:hover {
     background-color: #007bff;
 }
 
-/* Tableaux */
-table {
-    width: 100%;
-    max-width: 800px;
-    margin: auto;
-    border-collapse: collapse;
-    background: white;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-th, td {
-    padding: 12px;
-    border: 1px solid #ddd;
-    text-align: left;
-}
-
-th {
-    background-color: #007bff;
-    color: white;
-}
-
-tr:nth-child(even) {
-    background-color: #f2f2f2;
-}
 
 input[type="file"] {
     opacity: 0;
